@@ -2,6 +2,8 @@
 
 This is the helics co-simulation assignment with two python federates.
 
+Islanded Microgrid is used as a system and P controller is used to control the frequency deviation.
+
 Installing HELICS for Anaconda
 
 Use the following steps to install HELICS. These are also available in the lecture slides.
