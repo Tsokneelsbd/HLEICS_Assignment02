@@ -3,6 +3,8 @@ import logging
 import numpy as np
 from pynlcontrol import BasicUtils
 import matplotlib.pyplot as plt
+import sys
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -18,7 +20,7 @@ def destroy_federate(fed):
 
 
 if __name__ == "__main__":
-    K = 30
+    K = float(sys.argv[1])
     fed = h.helicsCreateValueFederateFromConfig("Control.json")
     federate_name = h.helicsFederateGetName(fed)
     logger.info(f"Created federate {federate_name}")
@@ -62,7 +64,7 @@ if __name__ == "__main__":
 
         x = h.helicsInputGetDouble(subid[0])
         logger.debug(f"\tReceived state signal {x:.2f} at {granted_time}")
-# input = change in freeuncy is controlled by the controller gain
+
         u = -K*x
 
         h.helicsPublicationPublishDouble(pubid[0], u)
@@ -73,15 +75,3 @@ if __name__ == "__main__":
         u_sim.append(u)
 
     destroy_federate(fed)
-
-    # fig, ax = plt.subplots(2, 1, figsize=(6, 8), constrained_layout=True)
-
-    # ax[0].plot(time_sim, u_sim)
-    # ax[1].plot(time_sim, x_sim)
-    # ax[0].set_xlabel("Control")
-    # plt.xlabel('Time [s]')
-    # plt.ylabel('Gain of Controller')
-
-    # plt.savefig('xPlot.png', dpi=400)
-
-    plt.show()

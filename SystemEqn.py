@@ -4,6 +4,8 @@ import numpy as np
 from pynlcontrol import BasicUtils
 import matplotlib.pyplot as plt
 import sympy as sym
+import pandas as pd
+import sys
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -33,19 +35,13 @@ class System:
 
 ## RK4 solver  (4th-order)
     def solve(self, x, u, Ts):
-        k1 = self.Fc(x, u)
-        k2 = self.Fc(x+Ts/2*k1, u)
-        k3 = self.Fc(x+Ts/2*k2, u)
-        k4 = self.Fc(x + Ts*k3, u)
-        xf = x + Ts/6*(k1 + 2*k2 + 2*k3 + k4)
-        return xf
+        return BasicUtils.Integrate(self.Fc, 'rk4', 0.02, x, u)
 
 ## Del_P_e  (Change of load)
 def LoadGen(t):
-    return 0.0 if t <= 5 else 0.3
+    return 0.0 if t <= 5 else 0.1
 
 
-##destroy federates function
 def destroy_federate(fed):
     grantedtime = h.helicsFederateRequestTime(fed, h.HELICS_TIME_MAXTIME)
     status = h.helicsFederateDisconnect(fed)
@@ -85,9 +81,8 @@ if __name__ == "__main__":
     update_interval = h.helicsFederateGetTimeProperty(
         fed, h.helics_property_time_period)
     logger.debug(f"Update interval: {update_interval}")
-    
-## Inital conditions for 
-    x = np.array([[0.0, 0.0, 0.0]]).T  # Initial states value
+
+    x = np.array([[0.0, 0.0, 0.0]]).T  # Initial states for d
 
     time_sim = []
     x_sim = []
@@ -120,7 +115,6 @@ if __name__ == "__main__":
         logger.debug(
             f"\tPublished state signal{x[1, 0]: .2f}  at {granted_time}\n")
 
-# publisihing x (states)
         h.helicsPublicationPublishDouble(pubid[0], x[1, 0])
 
         time_sim.append(granted_time)
@@ -131,17 +125,7 @@ if __name__ == "__main__":
 
     destroy_federate(fed)
 
-    fig, ax = plt.subplots(2, 1, figsize=(6, 8), constrained_layout=True)
-    plt.title("Frequency Control of a Islanded Microgrid")
-    ax[0].plot(time_sim, u_sim, color='red')
-    ax[0].set_xlabel("Time [s]")
-    ax[0].set_ylabel('Controller')
-    
-    ax[1].plot(time_sim, x_sim, color='blue')
-    ax[1].set_xlabel("Time [s]")
-    ax[1].set_ylabel('$\Delta\omega$')
+df = pd.DataFrame(data={'time': time_sim, 'x': x_sim, 'u': u_sim})
 
-  
-    plt.savefig('Plot_K_200.png', dpi=400)
-
-    plt.show()
+K = float(sys.argv[1])
+df.to_csv(f'data_fin{K:.0f}.csv', sep=',')
